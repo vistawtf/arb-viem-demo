@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700;800;900&family=Geist+Mono:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-vista-black: #111111;
+  --color-vista-orange: #ff5233;
+  --color-vista-gray-900: #1a1a1a;
+  --color-vista-gray-800: #2a2a2a;
+  --color-vista-gray-700: #3a3a3a;
+  --color-vista-gray-600: #4a4a4a;
+  --color-vista-gray-500: #6a6a6a;
+  --color-vista-gray-400: #8a8a8a;
+  --color-vista-gray-300: #aaaaaa;
+  --color-vista-gray-200: #cccccc;
+  --color-vista-gray-100: #dddddd;
+  --font-family-geist: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-family-geist-mono: 'Geist Mono', 'SF Mono', Consolas, monospace;
+}
+
+* {
+  font-family: var(--font-family-geist);
+}
+
+html, body {
+  background-color: #111111 !important;
+  color: white;
+}
+
+#root {
+  background-color: #111111;
+  min-height: 100vh;
+}
+
+/* Ensure no white backgrounds leak through */
+div, section, main, header, footer {
+  background-color: inherit;
+}
+
+.mono {
+  font-family: var(--font-family-geist-mono);
+}
+
+.vista-transition {
+  transition: all 200ms ease;
+}
+
+#noise-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+@keyframes data-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+.data-pulse {
+  animation: data-pulse 2s ease-in-out infinite;
+}
+
+.text-shadow-glow {
+  text-shadow: 0 0 20px var(--color-vista-orange);
+}
