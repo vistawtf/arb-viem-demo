@@ -26,7 +26,7 @@ export function TimeboostedTxsComponent({ client, chainName }: Props) {
       const hashes = await client.getTimeboostedTxHashes({
         blockHash: block.hash
       });
-      setTxHashes(hashes);
+      setTxHashes(hashes as `0x${string}`[]);
     } catch (err) {
       console.error('Error fetching timeboosted transactions:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');

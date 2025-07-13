@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { type AuctionStatus } from '../../../src/actions';
+import { type ActiveAuctionInfo, type RoundTimingInfo } from 'arb-viem';
 import { arbitrumClient } from '../lib/client';
+
+type AuctionInfo = ActiveAuctionInfo & RoundTimingInfo;
 
 interface Props {
   client: typeof arbitrumClient;
@@ -14,7 +16,7 @@ const formatTime = (seconds: number): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-const getPhaseColor = (phase: AuctionStatus['currentPhase']) => {
+const getPhaseColor = (phase: AuctionInfo['currentPhase']) => {
   switch (phase) {
     case 'bidding': return 'bg-green-500/20 text-green-400 border-green-500/30';
     case 'closing': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
@@ -24,7 +26,7 @@ const getPhaseColor = (phase: AuctionStatus['currentPhase']) => {
   }
 };
 
-const getPhaseLabel = (phase: AuctionStatus['currentPhase']) => {
+const getPhaseLabel = (phase: AuctionInfo['currentPhase']) => {
   switch (phase) {
     case 'bidding': return '› ACCEPTING BIDS';
     case 'closing': return '› AUCTION CLOSING';
@@ -35,7 +37,7 @@ const getPhaseLabel = (phase: AuctionStatus['currentPhase']) => {
 };
 
 export function AuctionStatus({ client, chainName }: Props) {
-  const [status, setStatus] = useState<AuctionStatus | null>(null);
+  const [status, setStatus] = useState<AuctionInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -51,8 +53,12 @@ export function AuctionStatus({ client, chainName }: Props) {
       setLoading(true);
       setError(null);
       try {
-        const auctionStatus = await client.getAuctionStatus();
-        setStatus(auctionStatus);
+        const [activeAuction, roundTiming] = await Promise.all([
+          client.getActiveAuction(),
+          client.getRoundTimingInfo(),
+        ]);
+        const auctionInfo: AuctionInfo = { ...activeAuction, ...roundTiming };
+        setStatus(auctionInfo);
         setIsInitialLoad(false);
       } catch (err) {
         console.error('Error fetching auction status:', err);
@@ -74,8 +80,8 @@ export function AuctionStatus({ client, chainName }: Props) {
     const timeSinceLastSync = now - lastSyncTimeRef.current;
     
     if (status.currentPhase === 'bidding') {
-      if (!localCountdown || timeSinceLastSync > 3000 || Math.abs(localCountdown - status.timeUntilAuctionCloses) > 2) {
-        setLocalCountdown(status.timeUntilAuctionCloses);
+      if (!localCountdown || timeSinceLastSync > 3000 || Math.abs(localCountdown - status.timeRemainingInRound) > 2) {
+        setLocalCountdown(status.timeRemainingInRound);
       }
       setLocalRoundStartCountdown(null);
     } else if (status.currentPhase === 'closing' || status.currentPhase === 'resolving') {
@@ -89,6 +95,7 @@ export function AuctionStatus({ client, chainName }: Props) {
     }
     
     lastSyncTimeRef.current = now;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   useEffect(() => {
@@ -112,6 +119,7 @@ export function AuctionStatus({ client, chainName }: Props) {
         countdownIntervalRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localCountdown !== null]);
 
   useEffect(() => {
@@ -135,6 +143,7 @@ export function AuctionStatus({ client, chainName }: Props) {
         roundStartIntervalRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localRoundStartCountdown !== null]);
 
   return (
@@ -175,19 +184,6 @@ export function AuctionStatus({ client, chainName }: Props) {
               </div>
 
               <div className="bg-[#2a2a2a] border border-[#4a4a4a] rounded p-3">
-                <span className="mono text-[#aaaaaa] text-xs tracking-wider block mb-2">AUCTION OPEN</span>
-                <span className={`inline-flex items-center px-2 py-1 rounded border text-xs mono font-medium ${
-                  status.isAuctionOpen 
-                    ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                    : 'bg-red-500/20 text-red-400 border-red-500/30'
-                }`}>
-                  › {status.isAuctionOpen ? 'YES' : 'NO'}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#2a2a2a] border border-[#4a4a4a] rounded p-3">
                 <span className="mono text-[#6a6a6a] text-xs tracking-wider block mb-1">CURRENT ROUND</span>
                 <span className="text-lg font-light text-[#ff5233] mono">
                   {status.currentRound.toString()}
@@ -195,9 +191,13 @@ export function AuctionStatus({ client, chainName }: Props) {
               </div>
 
               <div className="bg-[#2a2a2a] border border-[#4a4a4a] rounded p-3">
-                <span className="mono text-[#6a6a6a] text-xs tracking-wider block mb-1">NEXT AUCTION</span>
-                <span className="text-lg font-light text-[#ff5233] mono">
-                  #{status.nextAuctionRound.toString()}
+                <span className="mono text-[#6a6a6a] text-xs tracking-wider block mb-1">AUCTION OPEN</span>
+                <span className={`inline-flex items-center px-2 py-1 rounded border text-xs mono font-medium ${
+                  status.isAuctionOpen 
+                    ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                    : 'bg-red-500/20 text-red-400 border-red-500/30'
+                }`}>
+                  › {status.isAuctionOpen ? 'YES' : 'NO'}
                 </span>
               </div>
             </div>

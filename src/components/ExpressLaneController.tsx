@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { type ExpressLaneController } from '../../../src/actions';
+import { type ExpressLaneController } from 'arb-viem';
 import { arbitrumClient } from '../lib/client';
 
 interface Props {

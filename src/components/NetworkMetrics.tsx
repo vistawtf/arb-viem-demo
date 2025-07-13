@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
-import { type NetworkMetrics } from '../../../src/actions';
+import { type TvlInfo, type BiddingTokenInfo, type ExpressLaneController } from 'arb-viem';
 import { formatEther } from 'viem';
 import { arbitrumClient } from '../lib/client';
+
+type NetworkInfo = TvlInfo & BiddingTokenInfo & {
+  hasActiveController: ExpressLaneController['isActiveController'];
+  expressLaneDelay: number;
+  regularTransactionDelay: number;
+};
 
 interface Props {
   client: typeof arbitrumClient;
@@ -13,7 +19,7 @@ const formatAddress = (address: string): string => {
 };
 
 export function NetworkMetrics({ client, chainName }: Props) {
-  const [metrics, setMetrics] = useState<NetworkMetrics | null>(null);
+  const [metrics, setMetrics] = useState<NetworkInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -23,7 +29,20 @@ export function NetworkMetrics({ client, chainName }: Props) {
       setLoading(true);
       setError(null);
       try {
-        const networkMetrics = await client.getNetworkMetrics();
+        const [tvl, biddingToken, controller] = await Promise.all([
+          client.getTvl(),
+          client.getBiddingToken(),
+          client.getExpressLaneController(),
+        ]);
+        
+        const networkMetrics: NetworkInfo = {
+          ...tvl,
+          ...biddingToken,
+          hasActiveController: controller.isActiveController,
+          expressLaneDelay: 500, 
+          regularTransactionDelay: 1500,
+        };
+
         setMetrics(networkMetrics);
         setIsInitialLoad(false);
       } catch (err) {
@@ -121,18 +140,11 @@ export function NetworkMetrics({ client, chainName }: Props) {
               )}
             </div>
 
-            {/* Addresses in compact grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#2a2a2a] border border-[#4a4a4a] rounded p-3">
                 <div className="mono text-[#6a6a6a] text-xs tracking-wider mb-1">BIDDING TOKEN</div>
                 <div className="mono text-xs text-[#ff5233]">
                   {formatAddress(metrics.biddingToken)}
-                </div>
-              </div>
-              <div className="bg-[#2a2a2a] border border-[#4a4a4a] rounded p-3">
-                <div className="mono text-[#6a6a6a] text-xs tracking-wider mb-1">BENEFICIARY</div>
-                <div className="mono text-xs text-[#ff5233]">
-                  {formatAddress(metrics.beneficiary)}
                 </div>
               </div>
             </div>

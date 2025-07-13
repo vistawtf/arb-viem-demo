@@ -1,6 +1,6 @@
 import { createPublicClient, http } from 'viem';
 import { arbitrum, arbitrumSepolia } from 'viem/chains';
-import { timeboostPublicActions } from '../../../src/actions';
+import { timeboostPublicActions } from 'arb-viem';
 
 export const arbitrumClient = createPublicClient({
   chain: arbitrum,

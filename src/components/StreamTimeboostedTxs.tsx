@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { type TimeboostedTransaction } from '../../../src/actions';
+import { type TimeboostedTransaction } from 'arb-viem';
 import { arbitrumClient } from '../lib/client';
 
 interface Props {
